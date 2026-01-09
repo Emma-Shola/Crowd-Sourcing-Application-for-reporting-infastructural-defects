@@ -1,0 +1,66 @@
+# Dependencies
+node_modules/
+.pnpm-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build output
+dist/
+build/
+.next/
+out/
+
+# Runtime data
+*.pid
+*.seed
+*.pid.lock
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Coverage directory
+coverage/
+.nyc_output/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+
+# Backend specific
+uploads/
+*.pem
+*.key
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Vite cache
+.vite/
+
+# Frontend
+frontend/dist/
+frontend/node_modules/
+
+# Backend
+backend/node_modules/
+backend/uploads/

@@ -1,0 +1,98 @@
+* {
+  box-sizing: border-box;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #f4f6fb;
+  color: #111827;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 30px;
+  background: #0f172a;
+  color: white;
+}
+
+.navbar nav a {
+  margin-left: 18px;
+  opacity: 0.9;
+}
+
+.navbar nav .btn {
+  padding: 6px 14px;
+  border: 1px solid #38bdf8;
+  border-radius: 6px;
+}
+
+.logo {
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  padding: 60px 30px;
+}
+
+.hero img {
+  width: 100%;
+  border-radius: 14px;
+}
+
+.hero-actions .primary,
+button.primary {
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #2563eb;
+  color: white;
+}
+
+.secondary {
+  margin-left: 10px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #2563eb;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 30px;
+}
+
+.card {
+  background: white;
+  padding: 18px;
+  border-radius: 12px;
+}
+
+.container {
+  padding: 30px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+form {
+  max-width: 480px;
+}
+
+.form-group {
+  display: grid;
+  margin-bottom: 12px;
+}
