@@ -1,4 +1,4 @@
-// Report.jsx - Fixed for file uploads
+// Report.jsx - Fixed for file uploads with environment variable
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -11,6 +11,8 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon
 } from "@heroicons/react/24/solid";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function Report() {
   const navigate = useNavigate();
@@ -176,7 +178,7 @@ export default function Report() {
       });
 
       // Use fetch with FormData
-      const response = await fetch("http://localhost:5000/api/defects", {
+      const response = await fetch(`${API_BASE_URL}/api/defects`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`
@@ -490,3 +492,6 @@ export default function Report() {
     </div>
   );
 }
+
+console.log("ENV:", import.meta.env);
+console.log("API BASE:", import.meta.env.VITE_API_BASE_URL);

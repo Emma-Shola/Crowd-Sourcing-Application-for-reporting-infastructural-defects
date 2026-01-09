@@ -20,6 +20,8 @@ import {
   KeyIcon
 } from "@heroicons/react/24/outline";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
 export default function Register() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
@@ -132,7 +134,7 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/register", {
+      const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

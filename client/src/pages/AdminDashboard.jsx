@@ -27,6 +27,8 @@ import {
   CalendarDaysIcon
 } from "@heroicons/react/24/outline";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
 export default function AdminDashboard() {
   const [defects, setDefects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,14 +75,14 @@ export default function AdminDashboard() {
   const normalizeImages = (d) => {
     if (Array.isArray(d.images)) {
       return d.images.map(p =>
-        p.startsWith("http") ? p : `http://localhost:5000${p}`
+        p.startsWith("http") ? p : `${API_BASE_URL}${p}`
       );
     }
 
     if (d.imageUrl) {
       if (Array.isArray(d.imageUrl)) {
         return d.imageUrl.map(p =>
-          p.startsWith("http") ? p : `http://localhost:5000${p}`
+          p.startsWith("http") ? p : `${API_BASE_URL}${p}`
         );
       }
 
@@ -88,7 +90,7 @@ export default function AdminDashboard() {
         return [
           d.imageUrl.startsWith("http")
             ? d.imageUrl
-            : `http://localhost:5000${d.imageUrl}`,
+            : `${API_BASE_URL}${d.imageUrl}`,
         ];
       }
     }
@@ -105,7 +107,7 @@ export default function AdminDashboard() {
       const token = localStorage.getItem("token");
 
       const res = await fetch(
-        `http://localhost:5000/api/defects?page=${page}&limit=${limit}&search=${search}`,
+        `${API_BASE_URL}/api/defects?page=${page}&limit=${limit}&search=${search}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -161,7 +163,7 @@ export default function AdminDashboard() {
       const token = localStorage.getItem("token");
 
       const res = await fetch(
-        `http://localhost:5000/api/defects/${id}/status`,
+        `${API_BASE_URL}/api/defects/${id}/status`,
         {
           method: "PUT",
           headers: {
@@ -201,7 +203,7 @@ export default function AdminDashboard() {
       const token = localStorage.getItem("token");
 
       const res = await fetch(
-        `http://localhost:5000/api/defects/${id}/comment`,
+        `${API_BASE_URL}/api/defects/${id}/comment`,
         {
           method: "POST",
           headers: {

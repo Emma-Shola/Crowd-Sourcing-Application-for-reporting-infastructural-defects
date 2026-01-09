@@ -1,4 +1,4 @@
-// Dashboard.jsx - With Home Button Options
+// Dashboard.jsx - With Home Button Options and Environment Variable
 import { useEffect, useState, useCallback, useMemo, memo } from "react";
 import { Link } from "react-router-dom"; // Import Link for navigation
 import { 
@@ -23,6 +23,8 @@ import {
   CalendarDaysIcon,
   ArrowTrendingUpIcon
 } from "@heroicons/react/24/outline";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 // Memoized components for better performance
 const StatusFilterButton = memo(({ status, isActive, onClick }) => {
@@ -117,7 +119,7 @@ export default function Dashboard() {
       if (Array.isArray(d.images)) {
         return d.images.map(p => 
           p && typeof p === "string"
-            ? p.startsWith("http") ? p : `http://localhost:5000${p}`
+            ? p.startsWith("http") ? p : `${API_BASE_URL}${p}`
             : ""
         ).filter(Boolean);
       }
@@ -126,7 +128,7 @@ export default function Dashboard() {
         if (Array.isArray(d.imageUrl)) {
           return d.imageUrl.map(p =>
             p && typeof p === "string"
-              ? p.startsWith("http") ? p : `http://localhost:5000${p}`
+              ? p.startsWith("http") ? p : `${API_BASE_URL}${p}`
               : ""
           ).filter(Boolean);
         }
@@ -134,7 +136,7 @@ export default function Dashboard() {
         if (typeof d.imageUrl === "string" && d.imageUrl.trim()) {
           const url = d.imageUrl.startsWith("http") 
             ? d.imageUrl 
-            : `http://localhost:5000${d.imageUrl}`;
+            : `${API_BASE_URL}${d.imageUrl}`;
           return [url];
         }
       }
@@ -144,7 +146,7 @@ export default function Dashboard() {
       console.error("Error normalizing images:", err);
       return [];
     }
-  }, []);
+  }, [API_BASE_URL]);
 
   // Load reports with useCallback
   const loadReports = useCallback(async () => {
@@ -159,7 +161,7 @@ export default function Dashboard() {
       }
 
       const res = await fetch(
-        `http://localhost:5000/api/defects?page=${page}&limit=${limit}&search=${search}`,
+        `${API_BASE_URL}/api/defects?page=${page}&limit=${limit}&search=${search}`,
         {
           headers: { 
             Authorization: `Bearer ${token}`,
@@ -195,7 +197,7 @@ export default function Dashboard() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [page, search]);
+  }, [API_BASE_URL, page, search]);
 
   useEffect(() => {
     const delay = setTimeout(loadReports, 300);
@@ -248,14 +250,14 @@ export default function Dashboard() {
   const markAsRead = useCallback(async (id) => {
     try {
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:5000/api/defects/${id}/read-comments`, {
+      await fetch(`${API_BASE_URL}/api/defects/${id}/read-comments`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       });
     } catch (err) {
       console.error("Failed to mark as read:", err);
     }
-  }, []);
+  }, [API_BASE_URL]);
 
   // Memoized getStatusColor
   const getStatusColor = useCallback((status) => {

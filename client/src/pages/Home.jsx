@@ -1,4 +1,4 @@
-// Home.jsx - Updated with user-specific notifications
+// Home.jsx - Updated with user-specific notifications and environment variable
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { 
@@ -21,6 +21,8 @@ import {
   XMarkIcon
 } from "@heroicons/react/24/outline";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
 // NotificationBell Component (User-specific)
 const NotificationBell = () => {
   const [notifications, setNotifications] = useState([]);
@@ -37,7 +39,7 @@ const NotificationBell = () => {
       if (!token) return;
 
       // Fetch user's defects (reports)
-      const response = await fetch("http://localhost:5000/api/defects", {
+      const response = await fetch(`${API_BASE_URL}/api/defects`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -118,7 +120,7 @@ const NotificationBell = () => {
 
       // Mark comments as read on backend
       if (defectId) {
-        await fetch(`http://localhost:5000/api/defects/${defectId}/read-comments`, {
+        await fetch(`${API_BASE_URL}/api/defects/${defectId}/read-comments`, {
           method: "PUT",
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -148,7 +150,7 @@ const NotificationBell = () => {
 
       await Promise.all(
         defectIds.map(id =>
-          fetch(`http://localhost:5000/api/defects/${id}/read-comments`, {
+          fetch(`${API_BASE_URL}/api/defects/${id}/read-comments`, {
             method: "PUT",
             headers: { Authorization: `Bearer ${token}` },
           })

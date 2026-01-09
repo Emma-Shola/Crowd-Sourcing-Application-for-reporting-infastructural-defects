@@ -37,7 +37,7 @@ router.put(
 // DELETE
 router.delete("/:id", auth, deleteDefect);
 
-router.get("/api/defects/suggestions", auth, searchSuggestions);
+router.get("/suggestions/search", auth, searchSuggestions);
 
 
 const requireAdmin = require("../middleware/requireAdmin");

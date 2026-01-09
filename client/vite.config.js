@@ -7,6 +7,8 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  base: './',  // ← Add this line
+  
   optimizeDeps: {
     include: ['react-virtualized-auto-sizer'],
     esbuildOptions: {
@@ -21,4 +23,5 @@ export default defineConfig({
       include: [/react-virtualized-auto-sizer/, /node_modules/]
     }
   }
+  
 })
