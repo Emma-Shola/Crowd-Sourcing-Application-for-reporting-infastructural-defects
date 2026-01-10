@@ -8,25 +8,27 @@ const {
   updateStatus,
   deleteDefect,
   searchSuggestions,
-   addAdminComment,
-   markCommentAsRead
+  addAdminComment,
+  markCommentAsRead
 } = require("../controllers/defectController");
 
 const auth = require("../middleware/auth");
 const roles = require("../middleware/roles");
 const upload = require("../middleware/upload");
+const requireAdmin = require("../middleware/requireAdmin");
 
-// CREATE
-router.post("/", auth, upload.array("images", 6)   // allow up to 6 images
-, createDefect);
+/* ===================== SPECIAL ROUTES FIRST ===================== */
 
-// GET all
-router.get("/", auth, getDefects);
+// SEARCH (must come before :id)
+router.get("/suggestions/search", auth, searchSuggestions);
 
-// GET one
-router.get("/:id", auth, getDefect);
+// MARK COMMENTS AS READ
+router.put("/:id/read-comments", auth, markCommentAsRead);
 
-// UPDATE STATUS (ADMIN ONLY)
+// ADMIN COMMENT
+router.post("/:id/comment", auth, requireAdmin, addAdminComment);
+
+// UPDATE STATUS (ADMIN / MOD)
 router.put(
   "/:id/status",
   auth,
@@ -34,20 +36,23 @@ router.put(
   updateStatus
 );
 
+/* ===================== CRUD ROUTES ===================== */
+
+// CREATE
+router.post(
+  "/",
+  auth,
+  upload.array("images", 6),
+  createDefect
+);
+
+// GET ALL
+router.get("/", auth, getDefects);
+
+// GET ONE
+router.get("/:id", auth, getDefect);
+
 // DELETE
 router.delete("/:id", auth, deleteDefect);
-
-router.get("/suggestions/search", auth, searchSuggestions);
-
-
-const requireAdmin = require("../middleware/requireAdmin");
-
-router.post("/:id/comment", auth, requireAdmin, addAdminComment);
-
-// Add this import at the top:
-
-
-// Add this route (for regular users to mark comments as read):
-router.put("/:id/read-comments", auth, markCommentAsRead);
 
 module.exports = router;
