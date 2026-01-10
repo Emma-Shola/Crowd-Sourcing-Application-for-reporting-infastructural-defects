@@ -42,7 +42,7 @@ router.put(
 router.post(
   "/",
   auth,
-  upload.array("images", 6),
+  upload.array("images", 5),
   createDefect
 );
 
