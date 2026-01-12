@@ -1,6 +1,6 @@
-// Dashboard.jsx - With Home Button Options and Environment Variable
+// Dashboard.jsx - With Delete and Update functionality
 import { useEffect, useState, useCallback, useMemo, memo } from "react";
-import { Link } from "react-router-dom"; // Import Link for navigation
+import { Link, useNavigate } from "react-router-dom";
 import { 
   MagnifyingGlassIcon, 
   FunnelIcon,
@@ -16,7 +16,9 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
   ArrowUpTrayIcon,
-  HomeIcon // Import HomeIcon
+  HomeIcon,
+  TrashIcon,
+  PencilSquareIcon // Added for update
 } from "@heroicons/react/24/solid";
 import {
   DocumentTextIcon,
@@ -106,12 +108,24 @@ export default function Dashboard() {
     date: ""
   });
 
+  // NEW: State for update modal
+  const [updateModal, setUpdateModal] = useState({
+    open: false,
+    defectId: null,
+    title: "",
+    description: "",
+    type: "normal",
+    location: ""
+  });
+
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
     inProgress: 0,
     resolved: 0
   });
+
+  const navigate = useNavigate(); // For navigation
 
   // Memoize expensive calculations
   const normalizeImages = useCallback((d) => {
@@ -203,6 +217,109 @@ export default function Dashboard() {
     const delay = setTimeout(loadReports, 300);
     return () => clearTimeout(delay);
   }, [loadReports]);
+
+  // NEW: Delete defect function
+  const handleDeleteDefect = useCallback(async (defectId) => {
+    if (!window.confirm("Are you sure you want to delete this report? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_BASE_URL}/api/defects/${defectId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Remove the deleted defect from state
+        setDefects(prevDefects => prevDefects.filter(defect => defect._id !== defectId));
+        
+        // Update stats
+        setStats(prevStats => ({
+          ...prevStats,
+          total: prevStats.total - 1
+        }));
+        
+        // Show success message
+        alert("Report deleted successfully!");
+      } else {
+        alert(data.message || "Failed to delete report");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("Error deleting report. Please try again.");
+    }
+  }, [API_BASE_URL]);
+
+  // NEW: Open update modal
+  const handleOpenUpdateModal = useCallback((defect) => {
+    setUpdateModal({
+      open: true,
+      defectId: defect._id,
+      title: defect.title,
+      description: defect.description,
+      type: defect.type || "normal",
+      location: defect.location?.text || ""
+    });
+  }, []);
+
+  // NEW: Handle update submission
+  const handleUpdateDefect = useCallback(async (e) => {
+    e.preventDefault();
+    
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_BASE_URL}/api/defects/${updateModal.defectId}`, {
+        method: "PUT",
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: updateModal.title,
+          description: updateModal.description,
+          type: updateModal.type,
+          location: updateModal.location
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update the defect in state
+        setDefects(prevDefects => 
+          prevDefects.map(defect => 
+            defect._id === updateModal.defectId 
+              ? { ...defect, ...data.data }
+              : defect
+          )
+        );
+        
+        // Close modal
+        setUpdateModal({
+          open: false,
+          defectId: null,
+          title: "",
+          description: "",
+          type: "normal",
+          location: ""
+        });
+        
+        // Show success message
+        alert("Report updated successfully!");
+      } else {
+        alert(data.message || "Failed to update report");
+      }
+    } catch (error) {
+      console.error("Update error:", error);
+      alert("Error updating report. Please try again.");
+    }
+  }, [API_BASE_URL, updateModal]);
 
   // Memoized filtered defects
   const filtered = useMemo(() => {
@@ -491,6 +608,7 @@ export default function Dashboard() {
                 const idx = currentIndex[d._id] || 0;
                 const hasNewComment = d.adminComments?.some(c => !c.read) || 
                                      d.notifications?.some(n => !n.read);
+                const isOwnerOrAdmin = true; // You can add user role check here
 
                 return (
                   <div
@@ -591,34 +709,58 @@ export default function Dashboard() {
                         <span className="line-clamp-1">{d.location?.text || "No location"}</span>
                       </div>
 
-                      {/* Admin Comments */}
-                      {d.adminComments?.length > 0 && (
-                        <button
-                          onClick={() => {
-                            const latestComment = d.adminComments[d.adminComments.length - 1];
-                            setCommentView({
-                              open: true,
-                              text: latestComment.message,
-                              defectId: d._id,
-                              defectTitle: d.title,
-                              adminName: latestComment.admin?.name || "Admin",
-                              date: new Date(latestComment.createdAt).toLocaleDateString()
-                            });
-                            markAsRead(d._id);
-                          }}
-                          className={`w-full py-3 rounded-xl border transition-all duration-300 flex items-center justify-center space-x-2 ${
-                            hasNewComment
-                              ? "bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20"
-                              : "bg-gray-800/30 border-gray-700/30 text-gray-400 hover:bg-gray-800/50"
-                          }`}
-                        >
-                          <ChatBubbleLeftIcon className="h-5 w-5" />
-                          <span>View Admin Response</span>
-                          {hasNewComment && (
-                            <span className="h-2 w-2 rounded-full bg-cyan-500 animate-pulse" />
-                          )}
-                        </button>
-                      )}
+                      {/* Action Buttons */}
+                      <div className="space-y-3">
+                        {/* Admin Comments Button */}
+                        {d.adminComments?.length > 0 && (
+                          <button
+                            onClick={() => {
+                              const latestComment = d.adminComments[d.adminComments.length - 1];
+                              setCommentView({
+                                open: true,
+                                text: latestComment.message,
+                                defectId: d._id,
+                                defectTitle: d.title,
+                                adminName: latestComment.admin?.name || "Admin",
+                                date: new Date(latestComment.createdAt).toLocaleDateString()
+                              });
+                              markAsRead(d._id);
+                            }}
+                            className={`w-full py-3 rounded-xl border transition-all duration-300 flex items-center justify-center space-x-2 ${
+                              hasNewComment
+                                ? "bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20"
+                                : "bg-gray-800/30 border-gray-700/30 text-gray-400 hover:bg-gray-800/50"
+                            }`}
+                          >
+                            <ChatBubbleLeftIcon className="h-5 w-5" />
+                            <span>View Admin Response</span>
+                            {hasNewComment && (
+                              <span className="h-2 w-2 rounded-full bg-cyan-500 animate-pulse" />
+                            )}
+                          </button>
+                        )}
+
+                        {/* Update and Delete Buttons */}
+                        {isOwnerOrAdmin && (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleOpenUpdateModal(d)}
+                              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 transition-all duration-300 flex items-center justify-center space-x-2"
+                            >
+                              <PencilSquareIcon className="h-5 w-5" />
+                              <span>Update</span>
+                            </button>
+                            
+                            <button
+                              onClick={() => handleDeleteDefect(d._id)}
+                              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-red-500/10 to-rose-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-all duration-300 flex items-center justify-center space-x-2"
+                            >
+                              <TrashIcon className="h-5 w-5" />
+                              <span>Delete</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -770,6 +912,106 @@ export default function Dashboard() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Update Report Modal */}
+      {updateModal.open && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setUpdateModal({ open: false, defectId: null, title: "", description: "", type: "normal", location: "" })}
+        >
+          <div 
+            className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-800/50 rounded-2xl max-w-lg w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-gray-800/50">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-white">Update Report</h3>
+                <button 
+                  onClick={() => setUpdateModal({ open: false, defectId: null, title: "", description: "", type: "normal", location: "" })}
+                  className="p-2 rounded-lg hover:bg-gray-800 transition-colors"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            
+            <form onSubmit={handleUpdateDefect} className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    value={updateModal.title}
+                    onChange={(e) => setUpdateModal(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700/50 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/30 transition-all duration-300"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={updateModal.description}
+                    onChange={(e) => setUpdateModal(prev => ({ ...prev, description: e.target.value }))}
+                    rows="4"
+                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700/50 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/30 transition-all duration-300"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                    Type
+                  </label>
+                  <select
+                    value={updateModal.type}
+                    onChange={(e) => setUpdateModal(prev => ({ ...prev, type: e.target.value }))}
+                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700/50 rounded-xl text-white focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/30 transition-all duration-300"
+                  >
+                    <option value="normal">Normal</option>
+                    <option value="urgent">Urgent</option>
+                    <option value="hazardous">Hazardous</option>
+                    <option value="recyclable">Recyclable</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    value={updateModal.location}
+                    onChange={(e) => setUpdateModal(prev => ({ ...prev, location: e.target.value }))}
+                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700/50 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/30 transition-all duration-300"
+                    placeholder="Enter location"
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setUpdateModal({ open: false, defectId: null, title: "", description: "", type: "normal", location: "" })}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-gray-800 to-gray-900 border border-gray-700 hover:border-gray-600 transition-all duration-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold hover:from-blue-600 hover:to-indigo-600 transition-all duration-300"
+                >
+                  Update Report
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
