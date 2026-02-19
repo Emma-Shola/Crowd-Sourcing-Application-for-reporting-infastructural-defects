@@ -2,7 +2,6 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
-const path = require("path");
 
 // Import routes
 const authRoutes = require("./routes/authRoutes");
@@ -13,15 +12,13 @@ dotenv.config();
 
 const app = express();
 
-/* ===================== MIDDLEWARE ===================== */
-// ✅ PERFECT CORS CONFIGURATION - WORKS FOR ALL ORIGINS
+/* ===================== SIMPLE, WORKING CORS ===================== */
 app.use(cors({
-  origin: true,  // Dynamically echoes the requesting origin
+  origin: true,  // Dynamically allows any origin (solves CORS errors)
   credentials: true,
 }));
 
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 /* ===================== DATABASE CONNECTION ===================== */
 const connectDB = async () => {
@@ -40,32 +37,27 @@ const connectDB = async () => {
 };
 connectDB();
 
-/* ===================== API ROUTES ===================== */
+/* ===================== ROUTES ===================== */
 app.use("/api/auth", authRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/analytics", analyticsRoutes);
 
 /* ===================== HEALTH CHECK ===================== */
-app.get("/api/health", (req, res) => {
+app.get("/health", (req, res) => {
   res.json({ ok: true, timestamp: new Date().toISOString() });
 });
 
-/* ===================== ROOT TEST ===================== */
 app.get("/", (req, res) => {
   res.send("Job Application Tracker API is running");
 });
 
 /* ===================== ERROR HANDLER ===================== */
 app.use((err, req, res, next) => {
-  console.error("❌ GLOBAL ERROR:", err);
-  res.status(500).json({
-    success: false,
-    message: "Server error",
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
+  console.error("❌ Error:", err);
+  res.status(500).json({ message: "Server error" });
 });
 
-/* ===================== 404 HANDLER ===================== */
+/* ===================== 404 HANDLER (NO '*' WILDCARD) ===================== */
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
@@ -74,6 +66,4 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🚀 Server running on port ${PORT}`);
-  console.log(`🚀 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🚀 CORS: All origins allowed with credentials\n`);
 });
