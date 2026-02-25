@@ -1,60 +1,67 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
-const mongoose = require("mongoose");
+const path = require("path");
 
-// Import your routes
-const authRoutes = require("./routes/authRoutes");
-const jobRoutes = require("./routes/jobs");
-const analyticsRoutes = require("./routes/analytics");
+const connectDB = require("./config/db");
+const authRoutes = require("./routes/authRoute");
+const userRoutes = require("./routes/userRoutes");
+const defectRoutes = require("./routes/defectRoutes");
 
 dotenv.config();
+connectDB();
 
 const app = express();
 
-/* ===================== CLEAN CORS ===================== */
+/* ===================== MIDDLEWARE ===================== */
 app.use(cors({
-  origin: true,  // Dynamically allows your frontend origin
+  origin: true,
   credentials: true,
 }));
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-/* ===================== DATABASE ===================== */
-const connectDB = async () => {
-  try {
-    if (!process.env.MONGO_URI) throw new Error('MONGO_URI not defined');
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log('✅ MongoDB connected');
-  } catch (error) {
-    console.error('❌ MongoDB error:', error.message);
-    if (process.env.NODE_ENV === 'production') process.exit(1);
-  }
-};
-connectDB();
+// Serve uploaded files
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-/* ===================== ROUTES ===================== */
+
+/* ===================== API ROUTES ===================== */
 app.use("/api/auth", authRoutes);
-app.use("/api/jobs", jobRoutes);
-app.use("/api/analytics", analyticsRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/defects", defectRoutes);
 
-app.get("/health", (req, res) => res.json({ ok: true }));
-app.get("/", (req, res) => res.send("API running"));
-
-/* ===================== ERROR HANDLING ===================== */
-// 404 handler - NO WILDCARD PATH
-app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
+/* ===================== HEALTH CHECK ===================== */
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true });
 });
 
-// Global error handler
+/* ===================== ROOT TEST ===================== */
+app.get("/", (req, res) => {
+  res.send("Backend root is working");
+});
+
+// Multer / global error handler
 app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({ message: 'Server error' });
+  console.error("GLOBAL ERROR:", err);
+
+  if (err instanceof require("multer").MulterError) {
+    return res.status(400).json({
+      success: false,
+      message: err.message,
+    });
+  }
+
+  res.status(500).json({
+    success: false,
+    message: "Server error",
+  });
 });
 
-/* ===================== START SERVER ===================== */
+
+/* ===================== START ===================== */
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server on port ${PORT}`);
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
+
